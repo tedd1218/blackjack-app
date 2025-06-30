@@ -28,6 +28,15 @@ export default function GamePage() {
 
   const [showDealerCard, setShowDealerCard] = useState(false)
 
+  const cardStyle = {
+    background: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: '16px',
+    boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    border: '1px solid rgba(255, 255, 255, 0.1)'
+  };
+
   useEffect(() => {
     // Initialize deck
     setGameState((prev) => ({ ...prev, deck: createDeck() }))
@@ -95,15 +104,14 @@ export default function GamePage() {
   const stand = async () => {
     if (gameState.gameStatus !== "playing") return
 
+    // Add delay to allow dealer card flip animation to be visible
+    await new Promise((resolve) => setTimeout(resolve, 300))
     setShowDealerCard(true)
     await dealerPlay()
   }
 
   const dealerPlay = async () => {
     setShowDealerCard(true)
-
-    // Wait for dealer card reveal animation
-    await new Promise((resolve) => setTimeout(resolve, 500))
 
     const newDeck = [...gameState.deck]
     const newDealerHand = [...gameState.dealerHand]
@@ -200,8 +208,16 @@ export default function GamePage() {
   }
 
   return (
-    <div className="min-h-screen bg-green-900 p-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="relative min-h-screen w-full">
+      {/* Gradient background */}
+      <div
+        className="fixed inset-0 z-0"
+        style={{ background: 'linear-gradient(320deg, #f27121, #e94057, #8a2387)' }}
+        aria-hidden="true"
+      >
+        <div className="absolute inset-0 bg-black/20" />
+      </div>
+      <div className="relative z-10 max-w-6xl mx-auto p-4">
         <div className="flex items-center gap-4 mb-6">
           <Link href="/">
             <Button variant="outline" size="sm" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
@@ -214,7 +230,7 @@ export default function GamePage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          <Card className="bg-white/10 border-white/20">
+          <Card style={cardStyle}>
             <CardContent className="pt-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-400">${gameState.playerMoney}</div>
@@ -222,7 +238,7 @@ export default function GamePage() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-white/10 border-white/20">
+          <Card style={cardStyle}>
             <CardContent className="pt-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-400">{gameState.wins}</div>
@@ -230,7 +246,7 @@ export default function GamePage() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-white/10 border-white/20">
+          <Card style={cardStyle}>
             <CardContent className="pt-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-red-400">{gameState.losses}</div>
@@ -238,7 +254,7 @@ export default function GamePage() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-white/10 border-white/20">
+          <Card style={cardStyle}>
             <CardContent className="pt-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-yellow-400">{gameState.pushes}</div>
@@ -246,7 +262,7 @@ export default function GamePage() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-white/10 border-white/20">
+          <Card style={cardStyle}>
             <CardContent className="pt-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-white">${gameState.currentBet}</div>
@@ -257,9 +273,9 @@ export default function GamePage() {
         </div>
 
         {/* Game Area */}
-        <div className="grid md:grid-cols-2 gap-6 mb-6">
+        <div className="grid gap-6 mb-6">
           {/* Dealer */}
-          <Card className="bg-white/10 border-white/20">
+          <Card style={cardStyle} className="w-full max-w-[660px] mx-auto">
             <CardHeader>
               <CardTitle className="text-white flex justify-between">
                 <span>Dealer</span>
@@ -268,7 +284,7 @@ export default function GamePage() {
                 </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex justify-center">
               <AnimatedCardHand
                 cards={gameState.dealerHand}
                 isDealer={true}
@@ -279,7 +295,7 @@ export default function GamePage() {
           </Card>
 
           {/* Player */}
-          <Card className="bg-white/10 border-white/20">
+          <Card style={cardStyle} className="w-full max-w-[660px] mx-auto">
             <CardHeader>
               <CardTitle className="text-white flex justify-between">
                 <span>Your Hand</span>
@@ -288,7 +304,7 @@ export default function GamePage() {
                 </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex justify-center">
               <AnimatedCardHand
                 cards={gameState.playerHand}
                 isDealing={gameState.gameStatus === "playing" && gameState.playerHand.length > 0}
@@ -298,7 +314,7 @@ export default function GamePage() {
         </div>
 
         {/* Game Status */}
-        <Card className="bg-white/10 border-white/20 mb-6">
+        <Card style={cardStyle} className="mb-6 max-w-[660px] mx-auto">
           <CardContent className="pt-6">
             <div className="text-center">
               <p className="text-xl text-white mb-4">{gameState.message}</p>
@@ -341,13 +357,6 @@ export default function GamePage() {
                       Stand
                     </Button>
                   </div>
-
-                  {/* Strategy Hint */}
-                  {getOptimalMove() && (
-                    <div className="text-sm text-green-200">
-                      <strong>Optimal move:</strong> {getOptimalMove()}
-                    </div>
-                  )}
                 </div>
               )}
 

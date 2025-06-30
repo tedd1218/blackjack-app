@@ -1,9 +1,8 @@
 "use client"
 
-import { Card } from "@/components/ui/card"
-import { Heart, Diamond, Club, Spade } from "lucide-react"
 import type { Card as CardType } from "@/lib/types"
 import { useState, useEffect } from "react"
+import Image from "next/image"
 
 interface PlayingCardProps {
   card: CardType
@@ -31,42 +30,40 @@ export function PlayingCard({ card, hidden = false, isDealing = false, dealDelay
       setIsFlipping(true)
       setTimeout(() => {
         setShowFront(!hidden)
-        setTimeout(() => setIsFlipping(false), 150)
-      }, 150)
+        setTimeout(() => setIsFlipping(false), 200)
+      }, 200)
     }
   }, [hidden, showFront, isVisible])
 
-  const getSuitIcon = () => {
-    switch (card.suit) {
-      case "hearts":
-        return <Heart className="w-4 h-4 text-red-500 fill-current" />
-      case "diamonds":
-        return <Diamond className="w-4 h-4 text-red-500 fill-current" />
-      case "clubs":
-        return <Club className="w-4 h-4 text-black fill-current" />
-      case "spades":
-        return <Spade className="w-4 h-4 text-black fill-current" />
+  const getCardFileName = () => {
+    const suitMap = {
+      hearts: "H",
+      diamonds: "D", 
+      clubs: "C",
+      spades: "S"
     }
+    
+    const valueMap: Record<number, string> = {
+      1: "A",
+      11: "J",
+      12: "Q", 
+      13: "K"
+    }
+    
+    const suit = suitMap[card.suit]
+    const value = valueMap[card.value] || card.value.toString()
+    
+    return `${value}${suit}.svg`
   }
-
-  const getDisplayValue = () => {
-    if (card.value === 1) return "A"
-    if (card.value === 11) return "J"
-    if (card.value === 12) return "Q"
-    if (card.value === 13) return "K"
-    return card.value.toString()
-  }
-
-  const isRed = card.suit === "hearts" || card.suit === "diamonds"
 
   if (!isVisible) {
-    return <div className="w-16 h-24" /> // Placeholder space
+    return <div className="w-32 h-48" /> // Placeholder space
   }
 
   return (
     <div
       className={`
-        w-16 h-24 transition-all duration-300 ease-in-out transform
+        w-32 h-48 transition-all duration-500 ease-in-out transform
         ${isDealing ? "animate-slide-in" : ""}
         ${isFlipping ? "scale-x-0" : "scale-x-100"}
       `}
@@ -74,28 +71,31 @@ export function PlayingCard({ card, hidden = false, isDealing = false, dealDelay
         perspective: "1000px",
       }}
     >
-      <Card
+      <div
         className={`
-          w-full h-full border-2 border-gray-300 flex flex-col items-center justify-between p-1 relative
-          transition-all duration-300 ease-in-out
-          ${showFront ? "bg-white" : "bg-blue-900 border-blue-700"}
+          w-full h-full relative overflow-hidden
+          transition-all duration-500 ease-in-out
           ${isFlipping ? "transform rotateY-180" : ""}
         `}
       >
         {showFront ? (
-          <>
-            <div className={`text-xs font-bold ${isRed ? "text-red-500" : "text-black"}`}>{getDisplayValue()}</div>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">{getSuitIcon()}</div>
-            <div className={`text-xs font-bold transform rotate-180 ${isRed ? "text-red-500" : "text-black"}`}>
-              {getDisplayValue()}
-            </div>
-          </>
+          <Image
+            src={`/cards/${getCardFileName()}`}
+            alt={`${card.value} of ${card.suit}`}
+            fill
+            className="object-contain"
+            sizes="64px"
+          />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="text-white text-xs font-bold">?</div>
-          </div>
+          <Image
+            src="/cards/back.svg"
+            alt="Card back"
+            fill
+            className="object-contain"
+            sizes="64px"
+          />
         )}
-      </Card>
+      </div>
     </div>
   )
 }
