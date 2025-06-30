@@ -22,7 +22,7 @@ export function AnimatedCardHand({
           card={card}
           hidden={isDealer && index === 1 && !showAllCards}
           isDealing={isDealing}
-          dealDelay={index * 150}
+          dealDelay={index * 200}
         />
       ))}
     </div>

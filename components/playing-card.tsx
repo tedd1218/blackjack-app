@@ -28,10 +28,14 @@ export function PlayingCard({ card, hidden = false, isDealing = false, dealDelay
   useEffect(() => {
     if (hidden !== !showFront && isVisible) {
       setIsFlipping(true)
+      // Change the image at the middle of the flip (when card is sideways)
       setTimeout(() => {
         setShowFront(!hidden)
-        setTimeout(() => setIsFlipping(false), 200)
-      }, 200)
+      }, 300) // This matches the 50% point of the 600ms flip animation
+      // Stop flipping animation after it completes
+      setTimeout(() => {
+        setIsFlipping(false)
+      }, 600)
     }
   }, [hidden, showFront, isVisible])
 
@@ -65,37 +69,16 @@ export function PlayingCard({ card, hidden = false, isDealing = false, dealDelay
       className={`
         w-32 h-48 transition-all duration-500 ease-in-out transform
         ${isDealing ? "animate-slide-in" : ""}
-        ${isFlipping ? "scale-x-0" : "scale-x-100"}
+        ${isFlipping ? "animate-flip" : ""}
       `}
-      style={{
-        perspective: "1000px",
-      }}
     >
-      <div
-        className={`
-          w-full h-full relative overflow-hidden
-          transition-all duration-500 ease-in-out
-          ${isFlipping ? "transform rotateY-180" : ""}
-        `}
-      >
-        {showFront ? (
-          <Image
-            src={`/cards/${getCardFileName()}`}
-            alt={`${card.value} of ${card.suit}`}
-            fill
-            className="object-contain"
-            sizes="64px"
-          />
-        ) : (
-          <Image
-            src="/cards/back.svg"
-            alt="Card back"
-            fill
-            className="object-contain"
-            sizes="64px"
-          />
-        )}
-      </div>
+      <Image
+        src={showFront ? `/cards/${getCardFileName()}` : "/cards/back.svg"}
+        alt={showFront ? `${card.value} of ${card.suit}` : "Card back"}
+        fill
+        className="object-contain"
+        sizes="64px"
+      />
     </div>
   )
 }

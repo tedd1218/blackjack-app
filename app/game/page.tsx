@@ -27,6 +27,9 @@ export default function GamePage() {
   })
 
   const [showDealerCard, setShowDealerCard] = useState(false)
+  const [playerStood, setPlayerStood] = useState(false)
+  const [isActionInProgress, setIsActionInProgress] = useState(false)
+  const [dealerVisibleScore, setDealerVisibleScore] = useState(0)
 
   const cardStyle = {
     background: 'rgba(255, 255, 255, 0.1)',
@@ -72,6 +75,7 @@ export default function GamePage() {
     }))
 
     setShowDealerCard(false)
+    setDealerVisibleScore(calculateHandValue([dealerHand[0]]))
 
     // Check for blackjack
     if (playerScore === 21) {
@@ -79,46 +83,69 @@ export default function GamePage() {
     }
   }
 
-  const hit = () => {
-    if (gameState.gameStatus !== "playing") return
+  const hit = async () => {
+    if (gameState.gameStatus !== "playing" || isActionInProgress) return
+
+    setIsActionInProgress(true)
 
     const newDeck = [...gameState.deck]
     const newPlayerHand = [...gameState.playerHand]
-    newPlayerHand.push(dealCard(newDeck))
+    const newCard = dealCard(newDeck)
+    newPlayerHand.push(newCard)
 
     const newPlayerScore = calculateHandValue(newPlayerHand)
 
+    // Update state immediately to trigger card animation
     setGameState((prev) => ({
       ...prev,
       deck: newDeck,
-      playerHand: newPlayerHand,
+      playerHand: [...newPlayerHand],
       playerScore: newPlayerScore,
       message: newPlayerScore > 21 ? "Bust! You lose!" : "Make your move!",
     }))
 
+    // Wait for card animation to complete before checking for bust
     if (newPlayerScore > 21) {
-      setTimeout(() => endGame("lose"), 1000)
+      setTimeout(() => {
+        endGame("lose")
+        setIsActionInProgress(false)
+      }, 1200)
+    } else {
+      // Re-enable buttons after animation completes
+      setTimeout(() => {
+        setIsActionInProgress(false)
+      }, 600) // Match the card animation duration
     }
   }
 
   const stand = async () => {
-    if (gameState.gameStatus !== "playing") return
+    if (gameState.gameStatus !== "playing" || isActionInProgress) return
 
-    // Add delay to allow dealer card flip animation to be visible
-    await new Promise((resolve) => setTimeout(resolve, 300))
+    setIsActionInProgress(true)
+    
+    // Disable buttons by setting player stood state
+    setPlayerStood(true)
+    
+    // Trigger dealer card flip animation
     setShowDealerCard(true)
+    
+    // Update dealer visible score after flip animation starts
+    setTimeout(() => {
+      setDealerVisibleScore(calculateHandValue(gameState.dealerHand))
+    }, 400) // Delay to allow flip to start
+    
+    // Add delay to allow dealer card flip animation to complete
+    await new Promise((resolve) => setTimeout(resolve, 800))
     await dealerPlay()
   }
 
   const dealerPlay = async () => {
-    setShowDealerCard(true)
-
     const newDeck = [...gameState.deck]
     const newDealerHand = [...gameState.dealerHand]
 
     // Dealer hits on soft 17 with animation
     while (calculateHandValue(newDealerHand) < 17) {
-      await new Promise((resolve) => setTimeout(resolve, 800))
+      await new Promise((resolve) => setTimeout(resolve, 1000))
       newDealerHand.push(dealCard(newDeck))
 
       setGameState((prev) => ({
@@ -127,6 +154,8 @@ export default function GamePage() {
         dealerHand: [...newDealerHand],
         dealerScore: calculateHandValue(newDealerHand),
       }))
+      
+      setDealerVisibleScore(calculateHandValue(newDealerHand))
     }
 
     const finalDealerScore = calculateHandValue(newDealerHand)
@@ -200,6 +229,9 @@ export default function GamePage() {
       currentBet: 0,
     }))
     setShowDealerCard(false)
+    setPlayerStood(false)
+    setIsActionInProgress(false)
+    setDealerVisibleScore(0)
   }
 
   const getOptimalMove = () => {
@@ -280,7 +312,7 @@ export default function GamePage() {
               <CardTitle className="text-white flex justify-between">
                 <span>Dealer</span>
                 <Badge variant="secondary" className="bg-red-600 text-white">
-                  {showDealerCard ? calculateHandValue(gameState.dealerHand) : "?"}
+                  {showDealerCard ? dealerVisibleScore : "?"}
                 </Badge>
               </CardTitle>
             </CardHeader>
@@ -350,10 +382,18 @@ export default function GamePage() {
               {gameState.gameStatus === "playing" && (
                 <div className="space-y-4">
                   <div className="flex gap-2 justify-center flex-wrap">
-                    <Button onClick={hit} className="bg-red-600 hover:bg-red-700">
+                    <Button 
+                      onClick={hit} 
+                      disabled={playerStood || isActionInProgress}
+                      className={`${playerStood || isActionInProgress ? 'bg-gray-500 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}
+                    >
                       Hit
                     </Button>
-                    <Button onClick={stand} className="bg-yellow-600 hover:bg-yellow-700">
+                    <Button 
+                      onClick={stand} 
+                      disabled={playerStood || isActionInProgress}
+                      className={`${playerStood || isActionInProgress ? 'bg-gray-500 cursor-not-allowed' : 'bg-yellow-600 hover:bg-yellow-700'}`}
+                    >
                       Stand
                     </Button>
                   </div>
