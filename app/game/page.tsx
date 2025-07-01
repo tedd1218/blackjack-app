@@ -406,32 +406,32 @@ export default function GamePage() {
         </div>
 
         {/* Game Status */}
-        <Card style={cardStyle} className={`mb-4 sm:mb-6 max-w-xs sm:max-w-sm md:max-w-md mx-auto transition-all duration-700 ease-out delay-600 ${isPageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <CardContent className="pt-4 sm:pt-6">
+        <Card style={cardStyle} className={`mb-4 sm:mb-6 w-full max-w-xs sm:max-w-sm md:max-w-md mx-auto transition-all duration-700 ease-out delay-600 ${isPageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          <CardContent className="pt-4 sm:pt-6 px-2 sm:px-6">
             <div className="text-center">
               <p className="text-base sm:text-lg md:text-xl text-white mb-3 sm:mb-4">{gameState.message}</p>
 
               {/* Betting Phase */}
               {gameState.gameStatus === "betting" && (
-                <div className="flex gap-1 sm:gap-2 justify-center flex-wrap">
+                <div className="flex flex-wrap w-full gap-2 justify-center items-center">
                   <Button
                     onClick={() => placeBet(25)}
                     disabled={gameState.playerMoney < 25}
-                    className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2"
+                    className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 w-full min-[400px]:w-auto"
                   >
                     Bet $25
                   </Button>
                   <Button
                     onClick={() => placeBet(50)}
                     disabled={gameState.playerMoney < 50}
-                    className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2"
+                    className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 w-full min-[400px]:w-auto"
                   >
                     Bet $50
                   </Button>
                   <Button
                     onClick={() => placeBet(100)}
                     disabled={gameState.playerMoney < 100}
-                    className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2"
+                    className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 w-full min-[400px]:w-auto"
                   >
                     Bet $100
                   </Button>
