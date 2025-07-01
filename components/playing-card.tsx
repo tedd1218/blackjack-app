@@ -57,7 +57,7 @@ export function PlayingCard({ card, hidden = false, isDealing = false, dealDelay
     const suit = suitMap[card.suit]
     const value = valueMap[card.value] || card.value.toString()
     
-    return `${value}${suit}.svg`
+    return `${value}${suit}.png`
   }
 
   if (!isVisible) {
@@ -73,7 +73,7 @@ export function PlayingCard({ card, hidden = false, isDealing = false, dealDelay
       `}
     >
       <Image
-        src={showFront ? `/cards/${getCardFileName()}` : "/cards/back.svg"}
+        src={showFront ? `/cards/${getCardFileName()}` : "/cards/back.png"}
         alt={showFront ? `${card.value} of ${card.suit}` : "Card back"}
         fill
         className="object-contain"
