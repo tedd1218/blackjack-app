@@ -30,6 +30,7 @@ export default function GamePage() {
   const [playerStood, setPlayerStood] = useState(false)
   const [isActionInProgress, setIsActionInProgress] = useState(false)
   const [dealerVisibleScore, setDealerVisibleScore] = useState(0)
+  const [isInitialDeal, setIsInitialDeal] = useState(false)
 
   const cardStyle = {
     background: 'rgba(255, 255, 255, 0.1)',
@@ -76,6 +77,12 @@ export default function GamePage() {
 
     setShowDealerCard(false)
     setDealerVisibleScore(calculateHandValue([dealerHand[0]]))
+    setIsInitialDeal(true)
+
+    // Clear initial deal state after animation completes
+    setTimeout(() => {
+      setIsInitialDeal(false)
+    }, 1200) // Allow time for all cards to animate
 
     // Check for blackjack
     if (playerScore === 21) {
@@ -109,7 +116,7 @@ export default function GamePage() {
       setTimeout(() => {
         endGame("lose")
         setIsActionInProgress(false)
-      }, 1200)
+      }, 600)
     } else {
       // Re-enable buttons after animation completes
       setTimeout(() => {
@@ -145,7 +152,7 @@ export default function GamePage() {
 
     // Dealer hits on soft 17 with animation
     while (calculateHandValue(newDealerHand) < 17) {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      await new Promise((resolve) => setTimeout(resolve, 500))
       newDealerHand.push(dealCard(newDeck))
 
       setGameState((prev) => ({
@@ -162,7 +169,7 @@ export default function GamePage() {
 
     setTimeout(() => {
       checkForWinner(gameState.playerHand, newDealerHand, newDeck, gameState.currentBet)
-    }, 1000)
+    }, 600)
   }
 
   const checkForWinner = (playerHand: CardType[], dealerHand: CardType[], deck: CardType[], bet: number) => {
@@ -307,7 +314,7 @@ export default function GamePage() {
         {/* Game Area */}
         <div className="grid gap-6 mb-6">
           {/* Dealer */}
-          <Card style={cardStyle} className="w-full max-w-[660px] mx-auto">
+          <Card style={cardStyle} className="w-full max-w-xxl mx-auto">
             <CardHeader>
               <CardTitle className="text-white flex justify-between">
                 <span>Dealer</span>
@@ -321,13 +328,13 @@ export default function GamePage() {
                 cards={gameState.dealerHand}
                 isDealer={true}
                 showAllCards={showDealerCard}
-                isDealing={gameState.gameStatus === "playing" && gameState.dealerHand.length > 0}
+                isDealing={isInitialDeal || (gameState.gameStatus === "playing" && gameState.dealerHand.length > 2)}
               />
             </CardContent>
           </Card>
 
           {/* Player */}
-          <Card style={cardStyle} className="w-full max-w-[660px] mx-auto">
+          <Card style={cardStyle} className="w-full max-w-xxl mx-auto">
             <CardHeader>
               <CardTitle className="text-white flex justify-between">
                 <span>Your Hand</span>
@@ -346,7 +353,7 @@ export default function GamePage() {
         </div>
 
         {/* Game Status */}
-        <Card style={cardStyle} className="mb-6 max-w-[660px] mx-auto">
+        <Card style={cardStyle} className="mb-6 max-w-[400px] mx-auto">
           <CardContent className="pt-6">
             <div className="text-center">
               <p className="text-xl text-white mb-4">{gameState.message}</p>
