@@ -15,7 +15,7 @@ export function AnimatedCardHand({
   isDealing = false,
 }: AnimatedCardHandProps) {
   return (
-    <div className="flex gap-2 flex-wrap">
+    <div className="flex gap-1 sm:gap-2 flex-wrap justify-center">
       {cards.map((card, index) => (
         <PlayingCard
           key={`${card.suit}-${card.value}-${index}`}

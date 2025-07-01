@@ -61,13 +61,13 @@ export function PlayingCard({ card, hidden = false, isDealing = false, dealDelay
   }
 
   if (!isVisible) {
-    return <div className="w-32 h-48" /> // Placeholder space
+    return <div className="w-20 h-28 sm:w-24 sm:h-32 md:w-28 md:h-36 lg:w-32 lg:h-48" /> // Placeholder space
   }
 
   return (
     <div
       className={`
-        w-32 h-48 transition-all duration-500 ease-in-out transform
+        w-20 h-28 sm:w-24 sm:h-32 md:w-28 md:h-36 lg:w-32 lg:h-48 transition-all duration-500 ease-in-out transform
         ${isDealing ? "animate-slide-in" : ""}
         ${isFlipping ? "animate-flip" : ""}
       `}
@@ -77,7 +77,7 @@ export function PlayingCard({ card, hidden = false, isDealing = false, dealDelay
         alt={showFront ? `${card.value} of ${card.suit}` : "Card back"}
         fill
         className="object-contain"
-        sizes="64px"
+        sizes="(max-width: 640px) 80px, (max-width: 768px) 96px, (max-width: 1024px) 112px, 128px"
       />
     </div>
   )

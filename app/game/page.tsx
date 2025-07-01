@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
-import { createDeck, dealCard, calculateHandValue, getBasicStrategyDecision } from "@/lib/blackjack"
+import { createDeck, dealCard, calculateHandValue, calculateHandValues, getBasicStrategyDecision } from "@/lib/blackjack"
 import type { Card as CardType, GameState } from "@/lib/types"
 import { AnimatedCardHand } from "@/components/animated-card-hand"
 
@@ -29,8 +29,9 @@ export default function GamePage() {
   const [showDealerCard, setShowDealerCard] = useState(false)
   const [playerStood, setPlayerStood] = useState(false)
   const [isActionInProgress, setIsActionInProgress] = useState(false)
-  const [dealerVisibleScore, setDealerVisibleScore] = useState(0)
+  const [dealerVisibleScore, setDealerVisibleScore] = useState<string>("0")
   const [isInitialDeal, setIsInitialDeal] = useState(false)
+  const [isPageLoaded, setIsPageLoaded] = useState(false)
 
   const cardStyle = {
     background: 'rgba(255, 255, 255, 0.1)',
@@ -44,6 +45,9 @@ export default function GamePage() {
   useEffect(() => {
     // Initialize deck
     setGameState((prev) => ({ ...prev, deck: createDeck() }))
+    
+    // Trigger fade-in animations
+    setTimeout(() => setIsPageLoaded(true), 100)
   }, [])
 
   const placeBet = (amount: number) => {
@@ -76,7 +80,7 @@ export default function GamePage() {
     }))
 
     setShowDealerCard(false)
-    setDealerVisibleScore(calculateHandValue([dealerHand[0]]))
+    setDealerVisibleScore(calculateHandValues([dealerHand[0]]).display)
     setIsInitialDeal(true)
 
     // Clear initial deal state after animation completes
@@ -138,12 +142,59 @@ export default function GamePage() {
     
     // Update dealer visible score after flip animation starts
     setTimeout(() => {
-      setDealerVisibleScore(calculateHandValue(gameState.dealerHand))
+      setDealerVisibleScore(calculateHandValues(gameState.dealerHand).display)
     }, 400) // Delay to allow flip to start
     
     // Add delay to allow dealer card flip animation to complete
     await new Promise((resolve) => setTimeout(resolve, 800))
     await dealerPlay()
+  }
+
+  const double = async () => {
+    if (gameState.gameStatus !== "playing" || isActionInProgress) return
+    if (gameState.playerMoney < gameState.currentBet) return // Can't double if not enough money
+
+    setIsActionInProgress(true)
+
+    const newDeck = [...gameState.deck]
+    const newPlayerHand = [...gameState.playerHand]
+    const newCard = dealCard(newDeck)
+    newPlayerHand.push(newCard)
+
+    const newPlayerScore = calculateHandValue(newPlayerHand)
+
+    // Double the bet
+    const doubledBet = gameState.currentBet * 2
+
+    // Update state immediately to trigger card animation
+    setGameState((prev) => ({
+      ...prev,
+      deck: newDeck,
+      playerHand: [...newPlayerHand],
+      playerScore: newPlayerScore,
+      currentBet: doubledBet,
+      playerMoney: prev.playerMoney - prev.currentBet, // Deduct the additional bet
+      message: newPlayerScore > 21 ? "Bust! You lose!" : "Double down complete!",
+    }))
+
+    // Wait for card animation to complete, then automatically stand
+    setTimeout(async () => {
+      if (newPlayerScore > 21) {
+        endGame("lose")
+        setIsActionInProgress(false)
+      } else {
+        // Automatically stand after double
+        setPlayerStood(true)
+        setShowDealerCard(true)
+        
+        setTimeout(() => {
+          setDealerVisibleScore(calculateHandValues(gameState.dealerHand).display)
+        }, 400)
+        
+        await new Promise((resolve) => setTimeout(resolve, 800))
+        await dealerPlay()
+      }
+    }, 600)
   }
 
   const dealerPlay = async () => {
@@ -162,7 +213,7 @@ export default function GamePage() {
         dealerScore: calculateHandValue(newDealerHand),
       }))
       
-      setDealerVisibleScore(calculateHandValue(newDealerHand))
+      setDealerVisibleScore(calculateHandValues(newDealerHand).display)
     }
 
     const finalDealerScore = calculateHandValue(newDealerHand)
@@ -238,7 +289,7 @@ export default function GamePage() {
     setShowDealerCard(false)
     setPlayerStood(false)
     setIsActionInProgress(false)
-    setDealerVisibleScore(0)
+    setDealerVisibleScore("0")
   }
 
   const getOptimalMove = () => {
@@ -256,74 +307,76 @@ export default function GamePage() {
       >
         <div className="absolute inset-0 bg-black/20" />
       </div>
-      <div className="relative z-10 max-w-6xl mx-auto p-4">
-        <div className="flex items-center gap-4 mb-6">
+      <div className="relative z-10 max-w-7xl mx-auto p-2 sm:p-4">
+        <div className={`flex items-center gap-2 sm:gap-4 mb-4 sm:mb-6 transition-all duration-700 ease-out ${isPageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <Link href="/">
             <Button variant="outline" size="sm" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold text-white">Blackjack Game</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">Blackjack Game</h1>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-4 mb-4 sm:mb-6 transition-all duration-700 ease-out delay-200 ${isPageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <Card style={cardStyle}>
-            <CardContent className="pt-4">
+            <CardContent className="pt-2 sm:pt-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-400">${gameState.playerMoney}</div>
-                <div className="text-sm text-white">Money</div>
+                <div className="text-lg sm:text-xl md:text-2xl font-bold text-green-400">${gameState.playerMoney}</div>
+                <div className="text-xs sm:text-sm text-white">Money</div>
               </div>
             </CardContent>
           </Card>
           <Card style={cardStyle}>
-            <CardContent className="pt-4">
+            <CardContent className="pt-2 sm:pt-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-400">{gameState.wins}</div>
-                <div className="text-sm text-white">Wins</div>
+                <div className="text-lg sm:text-xl md:text-2xl font-bold text-blue-400">{gameState.wins}</div>
+                <div className="text-xs sm:text-sm text-white">Wins</div>
               </div>
             </CardContent>
           </Card>
           <Card style={cardStyle}>
-            <CardContent className="pt-4">
+            <CardContent className="pt-2 sm:pt-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-red-400">{gameState.losses}</div>
-                <div className="text-sm text-white">Losses</div>
+                <div className="text-lg sm:text-xl md:text-2xl font-bold text-red-400">{gameState.losses}</div>
+                <div className="text-xs sm:text-sm text-white">Losses</div>
               </div>
             </CardContent>
           </Card>
           <Card style={cardStyle}>
-            <CardContent className="pt-4">
+            <CardContent className="pt-2 sm:pt-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-400">{gameState.pushes}</div>
-                <div className="text-sm text-white">Pushes</div>
+                <div className="text-lg sm:text-xl md:text-2xl font-bold text-yellow-400">{gameState.pushes}</div>
+                <div className="text-xs sm:text-sm text-white">Pushes</div>
               </div>
             </CardContent>
           </Card>
           <Card style={cardStyle}>
-            <CardContent className="pt-4">
+            <CardContent className="pt-2 sm:pt-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-white">${gameState.currentBet}</div>
-                <div className="text-sm text-white">Current Bet</div>
+                <div className="text-lg sm:text-xl md:text-2xl font-bold text-white">${gameState.currentBet}</div>
+                <div className="text-xs sm:text-sm text-white">Current Bet</div>
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Game Area */}
-        <div className="grid gap-6 mb-6">
+        <div className={`grid gap-4 sm:gap-6 mb-4 sm:mb-6 transition-all duration-700 ease-out delay-400 ${isPageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           {/* Dealer */}
-          <Card style={cardStyle} className="w-full max-w-xxl mx-auto">
-            <CardHeader>
-              <CardTitle className="text-white flex justify-between">
+          <Card style={cardStyle} className="w-full max-w-4xl lg:max-w-6xl mx-auto">
+            <CardHeader className="pb-1 sm:pb-2">
+              <CardTitle className="text-white flex justify-between text-base sm:text-lg md:text-xl lg:text-2xl">
                 <span>Dealer</span>
-                <Badge variant="secondary" className="bg-red-600 text-white">
-                  {showDealerCard ? dealerVisibleScore : "?"}
+                <Badge variant="secondary" className="bg-red-600 text-white text-xs sm:text-sm">
+                  {gameState.dealerHand.length === 0 ? "0" : showDealerCard
+                    ? calculateHandValues(gameState.dealerHand).display
+                    : calculateHandValues([gameState.dealerHand[0]]).display}
                 </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex justify-center">
+            <CardContent className="flex justify-center p-1 sm:p-3">
               <AnimatedCardHand
                 cards={gameState.dealerHand}
                 isDealer={true}
@@ -334,16 +387,16 @@ export default function GamePage() {
           </Card>
 
           {/* Player */}
-          <Card style={cardStyle} className="w-full max-w-xxl mx-auto">
-            <CardHeader>
-              <CardTitle className="text-white flex justify-between">
+          <Card style={cardStyle} className="w-full max-w-4xl lg:max-w-6xl mx-auto">
+            <CardHeader className="pb-1 sm:pb-2">
+              <CardTitle className="text-white flex justify-between text-base sm:text-lg md:text-xl lg:text-2xl">
                 <span>Your Hand</span>
-                <Badge variant="secondary" className="bg-blue-600 text-white">
-                  {gameState.playerScore}
+                <Badge variant="secondary" className="bg-blue-600 text-white text-xs sm:text-sm">
+                  {calculateHandValues(gameState.playerHand).display}
                 </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex justify-center">
+            <CardContent className="flex justify-center p-1 sm:p-3">
               <AnimatedCardHand
                 cards={gameState.playerHand}
                 isDealing={gameState.gameStatus === "playing" && gameState.playerHand.length > 0}
@@ -353,32 +406,32 @@ export default function GamePage() {
         </div>
 
         {/* Game Status */}
-        <Card style={cardStyle} className="mb-6 max-w-[400px] mx-auto">
-          <CardContent className="pt-6">
+        <Card style={cardStyle} className={`mb-4 sm:mb-6 max-w-xs sm:max-w-sm md:max-w-md mx-auto transition-all duration-700 ease-out delay-600 ${isPageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          <CardContent className="pt-4 sm:pt-6">
             <div className="text-center">
-              <p className="text-xl text-white mb-4">{gameState.message}</p>
+              <p className="text-base sm:text-lg md:text-xl text-white mb-3 sm:mb-4">{gameState.message}</p>
 
               {/* Betting Phase */}
               {gameState.gameStatus === "betting" && (
-                <div className="flex gap-2 justify-center flex-wrap">
+                <div className="flex gap-1 sm:gap-2 justify-center flex-wrap">
                   <Button
                     onClick={() => placeBet(25)}
                     disabled={gameState.playerMoney < 25}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2"
                   >
                     Bet $25
                   </Button>
                   <Button
                     onClick={() => placeBet(50)}
                     disabled={gameState.playerMoney < 50}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2"
                   >
                     Bet $50
                   </Button>
                   <Button
                     onClick={() => placeBet(100)}
                     disabled={gameState.playerMoney < 100}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2"
                   >
                     Bet $100
                   </Button>
@@ -387,21 +440,28 @@ export default function GamePage() {
 
               {/* Playing Phase */}
               {gameState.gameStatus === "playing" && (
-                <div className="space-y-4">
-                  <div className="flex gap-2 justify-center flex-wrap">
+                <div className="space-y-2 sm:space-y-4">
+                  <div className="flex gap-1 sm:gap-2 justify-center flex-wrap">
                     <Button 
                       onClick={hit} 
                       disabled={playerStood || isActionInProgress}
-                      className={`${playerStood || isActionInProgress ? 'bg-gray-500 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}
+                      className={`text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 ${playerStood || isActionInProgress ? 'bg-gray-500 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}
                     >
                       Hit
                     </Button>
                     <Button 
                       onClick={stand} 
                       disabled={playerStood || isActionInProgress}
-                      className={`${playerStood || isActionInProgress ? 'bg-gray-500 cursor-not-allowed' : 'bg-yellow-600 hover:bg-yellow-700'}`}
+                      className={`text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 ${playerStood || isActionInProgress ? 'bg-gray-500 cursor-not-allowed' : 'bg-yellow-600 hover:bg-yellow-700'}`}
                     >
                       Stand
+                    </Button>
+                    <Button 
+                      onClick={double} 
+                      disabled={playerStood || isActionInProgress || gameState.playerMoney < gameState.currentBet || gameState.playerHand.length !== 2}
+                      className={`text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 ${playerStood || isActionInProgress || gameState.playerMoney < gameState.currentBet || gameState.playerHand.length !== 2 ? 'bg-gray-500 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'}`}
+                    >
+                      Double
                     </Button>
                   </div>
                 </div>
@@ -409,7 +469,7 @@ export default function GamePage() {
 
               {/* Game Finished */}
               {gameState.gameStatus === "finished" && (
-                <Button onClick={newGame} className="bg-blue-600 hover:bg-blue-700">
+                <Button onClick={newGame} className="bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm px-4 sm:px-6 py-2 sm:py-3">
                   New Game
                 </Button>
               )}

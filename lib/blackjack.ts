@@ -49,6 +49,51 @@ export function calculateHandValue(hand: Card[]): number {
   return value
 }
 
+export function calculateHandValues(hand: Card[]): { hard: number; soft: number; display: string } {
+  let hardValue = 0
+  let softValue = 0
+  let aces = 0
+
+  // Calculate hard value (all aces = 1)
+  for (const card of hand) {
+    if (card.value === 1) {
+      hardValue += 1
+      aces++
+    } else if (card.value > 10) {
+      hardValue += 10
+    } else {
+      hardValue += card.value
+    }
+  }
+
+  // Calculate soft value (one ace = 11, rest = 1)
+  softValue = hardValue
+  if (aces > 0) {
+    softValue += 10 // Convert one ace from 1 to 11
+  }
+
+  // Determine display format
+  let display: string
+  if (aces === 0) {
+    // No aces, just show single value
+    display = hardValue.toString()
+  } else if (softValue > 21) {
+    // Soft value busts, only show hard value
+    display = hardValue.toString()
+  } else if (hardValue === softValue) {
+    // Hard and soft are the same (e.g., A+2+3 = 6/16, but 16 > 21, so only 6)
+    display = hardValue.toString()
+  } else if (softValue === 21) {
+    // If soft total is exactly 21, just show 21
+    display = "21"
+  } else {
+    // Show both values: hard/soft
+    display = `${hardValue}/${softValue}`
+  }
+
+  return { hard: hardValue, soft: softValue, display }
+}
+
 export function getBasicStrategyDecision(playerHand: Card[], dealerUpCard: Card): string {
   const playerValue = calculateHandValue(playerHand)
   const dealerValue = dealerUpCard.value === 1 ? 11 : Math.min(dealerUpCard.value, 10)
